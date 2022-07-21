@@ -1,3 +1,42 @@
+## [2.7.7](https://github.com/vuejs/vue/compare/v2.7.6...v2.7.7) (2022-07-16)
+
+
+### Bug Fixes
+
+* **codegen:** script setup should not attempt to resolve native elements as component ([e8d3a7d](https://github.com/vuejs/vue/commit/e8d3a7d7a17f9e66d592fb1ddc4a603af9958d36)), closes [#12674](https://github.com/vuejs/vue/issues/12674)
+* **inject:** fix edge case of provided with async-mutated getters ([ea5d0f3](https://github.com/vuejs/vue/commit/ea5d0f3fbfd983cb0275457cbcef344f926381ea)), closes [#12667](https://github.com/vuejs/vue/issues/12667)
+* **setup:** ensure setup context slots can be accessed immediately ([67760f8](https://github.com/vuejs/vue/commit/67760f8d30778f58afeada3589d4ac4493329ad5)), closes [#12672](https://github.com/vuejs/vue/issues/12672)
+* **types:** vue.d.ts should use relative import to v3-component-public-instance ([#12668](https://github.com/vuejs/vue/issues/12668)) ([46ec648](https://github.com/vuejs/vue/commit/46ec64869479393f95b6abda7a4adecf19867d06)), closes [#12666](https://github.com/vuejs/vue/issues/12666)
+* **watch:** fix queueing multiple post watchers ([25ffdb6](https://github.com/vuejs/vue/commit/25ffdb62d22fe8688aca144d945671d5c82a8887)), closes [#12664](https://github.com/vuejs/vue/issues/12664)
+
+
+
+## [2.7.6](https://github.com/vuejs/vue/compare/v2.7.5...v2.7.6) (2022-07-15)
+
+
+### Bug Fixes
+
+* **types:** $refs can also contain ComponentPublicInstance ([#12659](https://github.com/vuejs/vue/issues/12659)) ([fffbb9e](https://github.com/vuejs/vue/commit/fffbb9e856de5e4b3053a6b4d01d1404bfb6f85e))
+* **types:** fix $children and $root instance types ([52a5979](https://github.com/vuejs/vue/commit/52a59790a5b6e16c9f8cc737fcd784413dda282d)), closes [#12655](https://github.com/vuejs/vue/issues/12655)
+* **types:** fix missing expose() type on setup context ([e0a9546](https://github.com/vuejs/vue/commit/e0a9546ef32fa4bbfc4bede3002b2d6a5be8cf72)), closes [#12660](https://github.com/vuejs/vue/issues/12660)
+
+
+
+## [2.7.5](https://github.com/vuejs/vue/compare/v2.7.4...v2.7.5) (2022-07-13)
+
+
+### Bug Fixes
+
+* add missing export from `vue.runtime.mjs` ([#12648](https://github.com/vuejs/vue/issues/12648)) ([08fb4a2](https://github.com/vuejs/vue/commit/08fb4a222c016c79af77ab96817d2ed9b7abbd80))
+* detect property add/deletion on reactive objects from setup when used in templates ([a6e7498](https://github.com/vuejs/vue/commit/a6e74985cf2eab6f16d03a8eda3bf3fc7950127c))
+* do not set currentInstance in beforeCreate ([0825d30](https://github.com/vuejs/vue/commit/0825d3087f9f39435838329c16adc2a7bfccd51d)), closes [#12636](https://github.com/vuejs/vue/issues/12636)
+* **reactivity:** fix watch behavior inconsistency + deep ref shallow check ([98fb01c](https://github.com/vuejs/vue/commit/98fb01c79c41c3b9f9134f0abb77d233ce4e5b44)), closes [#12643](https://github.com/vuejs/vue/issues/12643)
+* **sfc:** fix sfc name inference type check ([04b4703](https://github.com/vuejs/vue/commit/04b4703de72b1c1e686a3aa81d5b5b56799dabab)), closes [#12637](https://github.com/vuejs/vue/issues/12637)
+* **types:** support Vue interface augmentations in defineComponent ([005e52d](https://github.com/vuejs/vue/commit/005e52d0b6f1a5bf9679789c5c4b90afd442d86b)), closes [#12642](https://github.com/vuejs/vue/issues/12642)
+* **watch:** fix deep watch for structures containing raw refs ([1a2c3c2](https://github.com/vuejs/vue/commit/1a2c3c2d77ba96ef496f4c86329b7798026511ae)), closes [#12652](https://github.com/vuejs/vue/issues/12652)
+
+
+
 ## [2.7.4](https://github.com/vuejs/vue/compare/v2.7.3...v2.7.4) (2022-07-08)
 
 
