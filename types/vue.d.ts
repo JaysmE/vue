@@ -13,8 +13,16 @@ import {
 import { VNode, VNodeData, VNodeChildren, NormalizedScopedSlot } from './vnode'
 import { PluginFunction, PluginObject } from './plugin'
 import { DefineComponent } from './v3-define-component'
-import { nextTick } from './v3-generated'
-import { ComponentPublicInstance } from './v3-component-public-instance'
+import { nextTick, UnwrapNestedRefs, ShallowUnwrapRef } from './v3-generated'
+import {
+  UnwrapMixinsType,
+  IntersectionMixin
+} from './v3-component-public-instance'
+import {
+  ExtractComputedReturns,
+  ComponentOptionsMixin
+} from './v3-component-options'
+import { Directive, ObjectDirective } from './v3-directive'
 
 export interface CreateElement {
   (
@@ -41,18 +49,16 @@ type NeverFallback<T, D> = [T] extends [never] ? D : T
 export interface Vue<
   Data = Record<string, any>,
   Props = Record<string, any>,
-  Parent = never,
-  Root = never,
-  Children = never,
+  Instance = never,
   Options = never,
   Emit = (event: string, ...args: any[]) => Vue
 > {
   // properties with different types in defineComponent()
   readonly $data: Data
   readonly $props: Props
-  readonly $parent: NeverFallback<Parent, Vue>
-  readonly $root: NeverFallback<Root, Vue>
-  readonly $children: NeverFallback<Children, Vue[]>
+  readonly $parent: NeverFallback<Instance, Vue> | null
+  readonly $root: NeverFallback<Instance, Vue>
+  readonly $children: NeverFallback<Instance, Vue>[]
   readonly $options: NeverFallback<Options, ComponentOptions<Vue>>
   $emit: Emit
 
@@ -60,10 +66,10 @@ export interface Vue<
   readonly $el: Element
   readonly $refs: {
     [key: string]:
+      | NeverFallback<Instance, Vue>
       | Vue
       | Element
-      | ComponentPublicInstance
-      | (Vue | Element | ComponentPublicInstance)[]
+      | (NeverFallback<Instance, Vue> | Vue | Element)[]
       | undefined
   }
   readonly $slots: { [key: string]: VNode[] | undefined }
@@ -103,12 +109,20 @@ export type CombinedVueInstance<
   Methods,
   Computed,
   Props,
-  SetupBindings
-> = Data &
+  SetupBindings = {},
+  Mixin extends ComponentOptionsMixin = ComponentOptionsMixin,
+  Extends extends ComponentOptionsMixin = ComponentOptionsMixin,
+  PublicMixin = IntersectionMixin<Mixin> & IntersectionMixin<Extends>
+> = UnwrapNestedRefs<UnwrapMixinsType<PublicMixin, 'D'>> &
+  Data &
+  UnwrapMixinsType<PublicMixin, 'M'> &
   Methods &
+  ExtractComputedReturns<UnwrapMixinsType<PublicMixin, 'C'>> &
   Computed &
+  UnwrapMixinsType<PublicMixin, 'P'> &
   Props &
   Instance &
+  ShallowUnwrapRef<UnwrapMixinsType<PublicMixin, 'B'>> &
   (SetupBindings extends void ? {} : SetupBindings)
 
 export type ExtendedVue<
@@ -117,9 +131,20 @@ export type ExtendedVue<
   Methods,
   Computed,
   Props,
-  SetupBindings
+  SetupBindings = {},
+  Mixin extends ComponentOptionsMixin = ComponentOptionsMixin,
+  Extends extends ComponentOptionsMixin = ComponentOptionsMixin
 > = VueConstructor<
-  CombinedVueInstance<Instance, Data, Methods, Computed, Props, SetupBindings> &
+  CombinedVueInstance<
+    Instance,
+    Data,
+    Methods,
+    Computed,
+    Props,
+    SetupBindings,
+    Mixin,
+    Extends
+  > &
     Vue
 >
 
@@ -145,7 +170,9 @@ export interface VueConstructor<V extends Vue = Vue> {
     Methods = object,
     Computed = object,
     PropNames extends string = never,
-    SetupBindings = {}
+    SetupBindings = {},
+    Mixin extends ComponentOptionsMixin = ComponentOptionsMixin,
+    Extends extends ComponentOptionsMixin = ComponentOptionsMixin
   >(
     options?: ThisTypedComponentOptionsWithArrayProps<
       V,
@@ -153,7 +180,9 @@ export interface VueConstructor<V extends Vue = Vue> {
       Methods,
       Computed,
       PropNames,
-      SetupBindings
+      SetupBindings,
+      Mixin,
+      Extends
     >
   ): CombinedVueInstance<
     V,
@@ -161,7 +190,9 @@ export interface VueConstructor<V extends Vue = Vue> {
     Methods,
     Computed,
     Record<PropNames, any>,
-    SetupBindings
+    SetupBindings,
+    Mixin,
+    Extends
   >
 
   /**
@@ -175,7 +206,9 @@ export interface VueConstructor<V extends Vue = Vue> {
     Methods = object,
     Computed = object,
     Props = object,
-    SetupBindings = {}
+    SetupBindings = {},
+    Mixin extends ComponentOptionsMixin = ComponentOptionsMixin,
+    Extends extends ComponentOptionsMixin = ComponentOptionsMixin
   >(
     options?: ThisTypedComponentOptionsWithRecordProps<
       V,
@@ -183,7 +216,9 @@ export interface VueConstructor<V extends Vue = Vue> {
       Methods,
       Computed,
       Props,
-      SetupBindings
+      SetupBindings,
+      Mixin,
+      Extends
     >
   ): CombinedVueInstance<
     V,
@@ -191,7 +226,9 @@ export interface VueConstructor<V extends Vue = Vue> {
     Methods,
     Computed,
     Record<keyof Props, any>,
-    SetupBindings
+    SetupBindings,
+    Mixin,
+    Extends
   >
 
   /**
@@ -214,7 +251,9 @@ export interface VueConstructor<V extends Vue = Vue> {
     Methods,
     Computed,
     PropNames extends string = never,
-    SetupBindings = {}
+    SetupBindings = {},
+    Mixin extends ComponentOptionsMixin = ComponentOptionsMixin,
+    Extends extends ComponentOptionsMixin = ComponentOptionsMixin
   >(
     options?: ThisTypedComponentOptionsWithArrayProps<
       V,
@@ -222,7 +261,9 @@ export interface VueConstructor<V extends Vue = Vue> {
       Methods,
       Computed,
       PropNames,
-      SetupBindings
+      SetupBindings,
+      Mixin,
+      Extends
     >
   ): ExtendedVue<
     V,
@@ -230,22 +271,43 @@ export interface VueConstructor<V extends Vue = Vue> {
     Methods,
     Computed,
     Record<PropNames, any>,
-    SetupBindings
+    SetupBindings,
+    Mixin,
+    Extends
   >
 
   /**
    * extend with object props
    */
-  extend<Data, Methods, Computed, Props, SetupBindings = {}>(
+  extend<
+    Data,
+    Methods,
+    Computed,
+    Props,
+    SetupBindings = {},
+    Mixin extends ComponentOptionsMixin = ComponentOptionsMixin,
+    Extends extends ComponentOptionsMixin = ComponentOptionsMixin
+  >(
     options?: ThisTypedComponentOptionsWithRecordProps<
       V,
       Data,
       Methods,
       Computed,
       Props,
-      SetupBindings
+      SetupBindings,
+      Mixin,
+      Extends
     >
-  ): ExtendedVue<V, Data, Methods, Computed, Props, SetupBindings>
+  ): ExtendedVue<
+    V,
+    Data,
+    Methods,
+    Computed,
+    Props,
+    SetupBindings,
+    Mixin,
+    Extends
+  >
 
   /**
    * extend with functional + array props
@@ -277,6 +339,10 @@ export interface VueConstructor<V extends Vue = Vue> {
     id: string,
     definition?: DirectiveOptions | DirectiveFunction
   ): DirectiveOptions
+  directive(
+    id: string,
+    definition?: Directive
+  ): ObjectDirective
   filter(id: string, definition?: Function): Function
 
   component(id: string): VueConstructor
@@ -290,7 +356,9 @@ export interface VueConstructor<V extends Vue = Vue> {
     Methods,
     Computed,
     PropNames extends string = never,
-    SetupBindings = {}
+    SetupBindings = {},
+    Mixin extends ComponentOptionsMixin = ComponentOptionsMixin,
+    Extends extends ComponentOptionsMixin = ComponentOptionsMixin
   >(
     id: string,
     definition?: ThisTypedComponentOptionsWithArrayProps<
@@ -299,7 +367,9 @@ export interface VueConstructor<V extends Vue = Vue> {
       Methods,
       Computed,
       PropNames,
-      SetupBindings
+      SetupBindings,
+      Mixin,
+      Extends
     >
   ): ExtendedVue<
     V,
@@ -307,9 +377,19 @@ export interface VueConstructor<V extends Vue = Vue> {
     Methods,
     Computed,
     Record<PropNames, any>,
-    SetupBindings
+    SetupBindings,
+    Mixin,
+    Extends
   >
-  component<Data, Methods, Computed, Props, SetupBindings>(
+  component<
+    Data,
+    Methods,
+    Computed,
+    Props,
+    SetupBindings,
+    Mixin extends ComponentOptionsMixin = ComponentOptionsMixin,
+    Extends extends ComponentOptionsMixin = ComponentOptionsMixin
+  >(
     id: string,
     definition?: ThisTypedComponentOptionsWithRecordProps<
       V,
@@ -317,7 +397,9 @@ export interface VueConstructor<V extends Vue = Vue> {
       Methods,
       Computed,
       Props,
-      SetupBindings
+      SetupBindings,
+      Mixin,
+      Extends
     >
   ): ExtendedVue<V, Data, Methods, Computed, Props, SetupBindings>
   component<PropNames extends string>(

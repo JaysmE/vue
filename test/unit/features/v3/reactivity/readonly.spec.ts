@@ -483,7 +483,6 @@ describe('reactivity/readonly', () => {
     const ror = readonly(r)
     const obj = reactive({ ror })
     obj.ror = true
-
     expect(obj.ror).toBe(false)
     expect(`Set operation on key "value" failed`).toHaveBeenWarned()
   })
@@ -492,12 +491,18 @@ describe('reactivity/readonly', () => {
     const r = ref(false)
     const ror = readonly(r)
     const obj = reactive({ ror })
-    try {
-      obj.ror = ref(true) as unknown as boolean
-    } catch (e) {}
-
+    obj.ror = ref(true) as unknown as boolean
     expect(obj.ror).toBe(true)
     expect(toRaw(obj).ror).not.toBe(ror) // ref successfully replaced
+  })
+
+  test('setting readonly object to writable nested ref', () => {
+    const r = ref<any>()
+    const obj = reactive({ r })
+    const ro = readonly({})
+    obj.r = ro
+    expect(obj.r).toBe(ro)
+    expect(r.value).toBe(ro)
   })
 
   test('compatiblity with classes', () => {
@@ -519,5 +524,15 @@ describe('reactivity/readonly', () => {
     readonlyFoo.change()
     expect(readonlyFoo.x).toBe(1)
     expect(`et operation on key "x" failed`).toHaveBeenWarned()
+  })
+
+  test('warn non-extensible objects', () => {
+    const foo = Object.freeze({ a: 1 })
+    try {
+      readonly(foo)
+    } catch (e) {}
+    expect(
+      `Vue 2 does not support creating readonly proxy for non-extensible object`
+    ).toHaveBeenWarned()
   })
 })
